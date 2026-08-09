@@ -1,0 +1,12 @@
+pyyaml<7.0,>=6.0
+httpx<1.0,>=0.27
+python-dotenv<2.0,>=1.0
+pydantic<3.0,>=2.6
+
+[:python_version < "3.11"]
+tomli>=2.0
+
+[dev]
+pytest<10.0,>=8.0
+mypy<3.0,>=1.9
+ruff<1.0,>=0.4

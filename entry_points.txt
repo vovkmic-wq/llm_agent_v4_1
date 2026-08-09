@@ -1,0 +1,2 @@
+[console_scripts]
+llm-agent = main:main

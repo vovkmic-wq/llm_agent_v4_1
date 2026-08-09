@@ -1,0 +1,105 @@
+# config/models.yaml
+# Единый реестр всех моделей. Ключ вида "provider:alias" используется
+# везде в коде и в agent.yaml/prompts.yaml — никаких хардкод-строк в Python.
+
+providers:
+  anthropic:
+    enabled: true
+    env_key: ANTHROPIC_API_KEY
+    base_url: "https://api.anthropic.com/v1"
+    models:
+      claude-sonnet: "claude-sonnet-4-6"
+      claude-haiku: "claude-haiku-4-5-20251001"
+
+  openai:
+    enabled: true
+    env_key: OPENAI_API_KEY
+    base_url: "https://api.openai.com/v1"
+    models:
+      gpt-main: "gpt-4.1"
+      gpt-mini: "gpt-4.1-mini"
+
+  gemini:
+    enabled: true
+    env_key: GEMINI_API_KEY
+    base_url: "https://generativelanguage.googleapis.com/v1beta"
+    models:
+      gemini-pro: "gemini-2.5-pro"
+      gemini-flash: "gemini-2.5-flash"
+
+  deepseek:
+    enabled: true
+    env_key: DEEPSEEK_API_KEY
+    base_url: "https://api.deepseek.com/v1"
+    models:
+      deepseek-chat: "deepseek-chat"
+      deepseek-reasoner: "deepseek-reasoner"
+
+  ollama:
+    enabled: true
+    env_key: null            # локальный сервер, ключ не нужен
+    base_url_env: OLLAMA_BASE_URL
+    models:
+      llama-local: "llama3.1"
+      qwen-local: "qwen2.5"
+
+  gigachat:
+    enabled: true
+    env_key: GIGACHAT_AUTH_KEY
+    base_url: "https://api.giga.chat/v1"
+    auth_url: "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+    models:
+      gigachat: "GigaChat"
+      gigachat-pro: "GigaChat-Pro"
+      gigachat-ultra: "GigaChat-3-Ultra"
+
+  qwen:
+    enabled: true
+    env_key: QWEN_API_KEY
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    models:
+      qwen-plus: "qwen-plus"
+      qwen-max: "qwen-max"
+
+  yandexgpt:
+    enabled: true
+    env_key: YANDEX_API_KEY
+    base_url: "https://llm.api.cloud.yandex.net/foundationModels/v1"
+    base_url_env: YANDEX_BASE_URL
+    folder_id_env: YANDEX_FOLDER_ID
+    models:
+      yandex-pro: "yandexgpt"
+      yandex-lite: "yandexgpt-lite"
+
+# Правила маршрутизации запросов по моделям.
+# Router идёт по списку сверху вниз и берёт первое подходящее правило.
+routing:
+  rules:
+    - name: "code-tasks"
+      match:
+        tags: ["code", "программирование"]
+      model: "anthropic:claude-sonnet"
+
+    - name: "quick-questions"
+      match:
+        tags: ["quick", "быстрый"]
+      model: "anthropic:claude-haiku"
+
+    - name: "sensitive-data"
+      match:
+        tags: ["confidential", "конфиденциально"]
+      model: "ollama:llama-local"
+
+  # ТЕПЕРЬ ПО УМОЛЧАНИЮ ИСПОЛЬЗУЕТСЯ YANDEXGPT
+  default: "yandexgpt:yandex-pro"
+
+  # Fallback-цепочка: если основная модель недоступна — пробуем по очереди
+  fallback_chain:
+    - "yandexgpt:yandex-pro"          # сначала Яндекс
+    - "anthropic:claude-sonnet"       # затем Anthropic
+    - "openai:gpt-main"               # потом OpenAI
+    - "deepseek:deepseek-chat"        # и DeepSeek
+
+  retry:
+    max_attempts: 3
+    backoff_seconds: 2

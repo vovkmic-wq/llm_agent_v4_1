@@ -1,0 +1,179 @@
+agent:
+  name: "LLM Coding Agent V4.1 ICS"
+  role: >
+    Автономный software-engineering агент: понимает техническое задание,
+    исследует активный проект, планирует, изменяет код малыми проверяемыми patch,
+    самостоятельно запускает проверки, исправляет ошибки и завершает задачу
+    только после подтверждённых tool_result/evidence.
+
+  rules:
+    - "Отвечай по-русски, если пользователь не попросил другой язык."
+    - "PROJECT CONTRACT/ТЗ имеет приоритет над историей чата."
+    - "Не проси подтверждение действий, которые ядро разрешает автоматически."
+    - "Не утверждай об изменении файла или успешном тесте без tool_result."
+    - "Существующий файл сначала прочитай; для изменения используй малый patch."
+    - "Не передавай большие исходники внутри JSON; используй raw PAYLOAD V3."
+    - "После ошибки тестов анализируй traceback, исправляй причину и повторяй проверки."
+    - "Независимые read/list операции объединяй в ToolBatch; не расходуй LLM-раунды по одному файлу."
+    - "После read-only потолка ядро запрещает дальнейшую разведку: переходи к patch, diagnostic execution или blocker."
+    - "Ни одной нетривиальной правки до механически утверждённого IAP."
+    - "Для проверки кода сам запускай execution-инструменты."
+    - "Если tool-протокол сломан, возвращай меньший action, а не повторяй большой файл."
+    - "Не обходи CAPTCHA, авторизацию, rate limits и механизмы защиты сайтов."
+
+  memory:
+    use_context: true
+    use_summary: true
+    last_messages: 6
+    max_context_tokens: 10000
+    loop_reserve_tokens: 2500
+    project_context_chars: 18000
+    summary_chars: 4000
+    long_term_context_chars: 5000
+
+  workspace:
+    enabled: true
+    root_env: "AGENT_WORKSPACE_DIR"
+    max_file_size_bytes: 2000000
+    max_list_entries: 1500
+    validate_on_write: true
+    protected_globs:
+      - ".env"
+      - ".env.*"
+      - "*.pem"
+      - "*.key"
+      - "*.p12"
+      - "*.pfx"
+      - "secrets.*"
+      - ".git"
+      - ".git/*"
+      - ".git/**"
+      - ".venv"
+      - ".venv/*"
+      - ".venv/**"
+      - "venv"
+      - "venv/*"
+      - "venv/**"
+    ignored_globs:
+      - "__pycache__"
+      - "__pycache__/**"
+      - ".pytest_cache"
+      - ".pytest_cache/**"
+      - ".mypy_cache"
+      - ".mypy_cache/**"
+      - ".ruff_cache"
+      - ".ruff_cache/**"
+      - ".tox"
+      - ".tox/**"
+      - ".nox"
+      - ".nox/**"
+      - "node_modules"
+      - "node_modules/**"
+      - "build"
+      - "build/**"
+      - "dist"
+      - "dist/**"
+
+  execution:
+    enabled_env: "AGENT_ALLOW_CODE_EXECUTION"
+    timeout_seconds: 180
+    max_output_chars: 50000
+    allow_terminal_compat: true
+
+  research:
+    enabled_env: "AGENT_ALLOW_RESEARCH"
+    allowed_domains:
+      - "docs.python.org"
+      - "pypi.org"
+      - "github.com"
+      - "raw.githubusercontent.com"
+      - "docs.ozon.ru"
+      - "seller-edu.ozon.ru"
+      - "ozon.ru"
+    timeout_seconds: 20
+    max_response_bytes: 500000
+
+  incident:
+    enabled: true
+    approval_mode: "kernel"
+    max_period_rounds: 12
+    max_periods: 4
+    max_plan_revisions: 4
+    max_safety_stops: 4
+    max_read_only_rounds: 4
+    max_no_progress_rounds: 3
+
+  orchestration:
+    planning_enabled: true
+    review_enabled: true
+    max_steps: 60
+    max_total_llm_rounds: 36
+    auto_verify_after_mutation: true
+    batch_reads_required: true
+    protocol_repairs_per_model: 2
+    protocol_fallback_models:
+      - "yandexgpt:yandex-pro"
+      - "openai:gpt-main"
+      - "anthropic:claude-sonnet"
+      - "deepseek:deepseek-chat"
+      - "ollama:qwen-local"
+    checkpoint_on_failure: true
+    baseline_quality_gates: true
+    max_reviewer_rejections: 2
+    task_keywords:
+      - "создай"
+      - "разработай"
+      - "исправь"
+      - "переработай"
+      - "рефактор"
+      - "напиши код"
+      - "проект"
+      - "протестируй"
+      - "проверь"
+      - "работоспособ"
+      - "файл"
+
+  generation:
+    planner:
+      temperature: 0.1
+      max_tokens: 3000
+    executor:
+      temperature: 0.15
+      max_tokens: 8192
+    repair:
+      temperature: 0.0
+      max_tokens: 4096
+    reviewer:
+      temperature: 0.1
+      max_tokens: 3000
+    summarizer:
+      temperature: 0.1
+      max_tokens: 2500
+
+  quality_gates:
+    auto_run: true
+    compileall: true
+    pytest: true
+    ruff: true
+    mypy: true
+
+  roles:
+    planner: "yandexgpt:yandex-pro"
+    executor: "yandexgpt:yandex-pro"
+    reviewer: "yandexgpt:yandex-pro"
+    safety_officer: "yandexgpt:yandex-pro"
+
+  permissions:
+    rules:
+      "workspace.*": "auto"
+      "workspace.delete_file": "confirm"
+      "execution.*": "auto"
+      "terminal.execute": "auto"
+      "research.*": "auto"
+
+  default_model: "yandexgpt:yandex-pro"
+
+  summarization:
+    enabled: true
+    trigger_after_messages: 30
+    summarizer_model: "yandexgpt:yandex-lite"

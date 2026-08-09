@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: llm-agent-v4
+Version: 0.4.1
+Summary: ICS-inspired production autonomous multi-LLM coding agent with mechanical gates, incident journals and executable verification
+Requires-Python: >=3.10
+Requires-Dist: pyyaml<7.0,>=6.0
+Requires-Dist: httpx<1.0,>=0.27
+Requires-Dist: python-dotenv<2.0,>=1.0
+Requires-Dist: pydantic<3.0,>=2.6
+Requires-Dist: tomli>=2.0; python_version < "3.11"
+Provides-Extra: dev
+Requires-Dist: pytest<10.0,>=8.0; extra == "dev"
+Requires-Dist: mypy<3.0,>=1.9; extra == "dev"
+Requires-Dist: ruff<1.0,>=0.4; extra == "dev"
